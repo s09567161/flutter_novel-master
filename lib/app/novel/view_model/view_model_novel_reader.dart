@@ -11,6 +11,7 @@ import 'package:flutter_novel/app/novel/model/model_novel_cache.dart';
 import 'package:flutter_novel/app/novel/model/zssq/model_book_net.dart';
 import 'package:flutter_novel/app/novel/widget/reader/content/helper/helper_reader_content.dart';
 import 'package:flutter_novel/app/novel/widget/reader/manager/manager_reader_progress.dart';
+import 'package:flutter_novel/app/novel/widget/reader/model/event_bus.dart';
 import 'package:flutter_novel/app/novel/widget/reader/model/model_reader_config.dart';
 import 'package:flutter_novel/app/novel/widget/reader/model/model_reader_content.dart';
 import 'package:flutter_novel/base/structure/base_view_model.dart';
@@ -45,7 +46,9 @@ class NovelReaderViewModel extends BaseViewModel {
   NovelReaderViewModel._(NovelBookInfo bookInfo, NovelBookNetModel netModel,
       NovelBookCacheModel cacheModel, NovelBookDBModel dbModel) {
     this.bookInfo = bookInfo;
-
+    EventBus().on(ReadUpdateContentEvent,(arg){
+      updateContent(arg);
+    });
     _contentModel = NovelReaderContentModel(this);
     _configModel = NovelReaderConfigModel(this);
     progressManager = ReaderProgressManager(this);
@@ -62,8 +65,14 @@ class NovelReaderViewModel extends BaseViewModel {
   void registerContentOperateCallback(OnContentChanged contentChangedCallback) {
     this.contentChangedCallback = contentChangedCallback;
   }
+  //刷新章节
+  void updateChapterIndex(int chapterIndex) {
 
-  void updateChapterIndex(int chapterIndex) {}
+  }
+  //刷新页面
+  void updateContent(int index) {
+    reApplyConfig(true, false);
+  }
 
   /// ---------------------------- 配置相关 ------------------------------------
 
@@ -219,7 +228,7 @@ class NovelReaderViewModel extends BaseViewModel {
 
     String txt = await rootBundle.loadString('resource/Section0002.xhtml');
     String content = _parseHtmlString(txt);
-
+      print('------本地数据-------------------$content-------------------------------');
     parseChapterContent(ReaderParseContentDataValue(content,
         chapterData.novelId, chapterData.title, chapterData.order - 1));
 

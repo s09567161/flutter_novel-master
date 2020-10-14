@@ -354,20 +354,21 @@ assert(paragraphContents!=null&&paragraphContents.length>0);
           double imgH = double.parse(imgHStr);
           double imgW = double.parse(imgWStr);
           //计算图片按比例缩放
+          double scale = imgH/imgW;
+          var dinterval;
+          //计算图片按比例缩放
           if (imgW > maxWidth) {
-            imgH = maxWidth * imgH / imgW*2;
-            imgW = maxWidth;
-          }
-          if(imgH > maxheight){
-            imgH = maxheight;
+            dinterval = (imgW-maxWidth)/20;
+            imgH = scale*imgW/2;
+            imgW = maxWidth+30;
           }
           img = ReadImageController().getNetBookContentImageByUrl(url, index,viewModel);
           if (img != null) {
             offset = Offset(configEntity.contentPadding.toDouble(), offset.dy);
             //获取到图片，绘制图片
-
-           // pageCanvas.drawImage(img, offset, viewModel.bgPaint);
-             pageCanvas.drawImageRect(img, Rect.fromLTRB(0, 0, double.parse(imgWStr),double.parse(imgHStr)), Rect.fromLTRB(offset.dx, offset.dy,imgW,imgH),viewModel.bgPaint);
+            pageCanvas.drawImageRect(img,
+                Rect.fromLTWH(0, 0, double.parse(imgWStr),double.parse(imgHStr)),
+                Rect.fromLTWH(offset.dx+dinterval, offset.dy+dinterval,imgW,imgH),viewModel.bgPaint);
             offset = Offset(configEntity.contentPadding.toDouble(), offset.dy + imgH + pageContentConfig.currentContentParagraphSpacing);
           }
         }
