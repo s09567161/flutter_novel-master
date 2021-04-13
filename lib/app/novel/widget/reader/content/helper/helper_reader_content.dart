@@ -91,7 +91,7 @@ class ReaderContentProvider {
 
             var imgHStr = urlMap['height'] ?? '0';
             var imgWStr = urlMap['width'] ?? '0';
-            print('--$url----------------$imgHStr--------$imgWStr---------------');
+           // print('--$url----------------$imgHStr--------$imgWStr---------------');
             double imgH = double.parse(imgHStr);
             double imgW = double.parse(imgWStr);
 
@@ -124,6 +124,7 @@ class ReaderContentProvider {
 
         } else {
           print('-----------配置画笔----------------');
+
           /// 配置画笔
           textPainter.text = TextSpan(
               text: tempContent,

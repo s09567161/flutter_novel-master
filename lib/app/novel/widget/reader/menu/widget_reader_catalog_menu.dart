@@ -1,10 +1,11 @@
+import 'package:epub/epub.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_novel/app/novel/entity/entity_novel_book_chapter.dart';
 import 'package:flutter_novel/app/novel/widget/reader/menu/manager_menu_widget.dart';
 import 'package:flutter_novel/app/widget/scrollable_positioned_list/scrollable_positioned_list.dart';
 
 class NovelCatalogMenu extends StatefulWidget {
-  final NovelBookChapter bookChapter;
+  final List<EpubChapter> bookChapter;
   final OnMenuItemClicked _menuItemClickedCallback;
   final int currentChapterIndex;
 
@@ -40,13 +41,13 @@ class _NovelCatalogMenuState extends State<NovelCatalogMenu> {
               child: Container(
                 padding: EdgeInsets.all(15),
                 child: Text(
-                  widget?.bookChapter?.chapters[index].title,
+                  widget?.bookChapter[index].Title,
                   style: TextStyle(fontSize: 20, height: 1.5,color: Colors.white),
                 ),
               ),
             );
           },
-          itemCount: widget?.bookChapter?.chapters?.length,
+          itemCount:widget.bookChapter.length,
           itemScrollController: primaryISC,
           initialScrollIndex: widget.currentChapterIndex,
         ),

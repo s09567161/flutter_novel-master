@@ -122,8 +122,8 @@ class _SettingMenuFontSizeState extends State<_SettingMenuFontSizeItem> {
 
   @override
   Widget build(BuildContext context) {
-    NovelReaderViewModel viewModel =
-        Provider.of<NovelReaderViewModel>(context, listen: false);
+    NovelReaderViewModel viewModel = Provider.of<NovelReaderViewModel>(context, listen: false);
+
 
     return Expanded(
       flex: 1,
@@ -700,8 +700,7 @@ class _SettingMenuPageBgItemState extends State<_SettingMenuPageBgItem> {
                     color: Color(0xfffff2cc),
                   ),
             onTap: () {
-              if (selectedBgColor != null &&
-                  selectedBgColor != Color(0xfffff2cc)) {
+              if (selectedBgColor != null && selectedBgColor != Color(0xfffff2cc)) {
                 NovelConfigManager().setUserConfigBgColor(Color(0xfffff2cc));
                 widget._menuItemClickedCallback(
                     MenuOperateEnum.OPERATE_SETTING_BG_COLOR,
@@ -736,8 +735,7 @@ class _SettingMenuPageBgItemState extends State<_SettingMenuPageBgItem> {
                     color: Colors.greenAccent,
                   ),
             onTap: () {
-              if (selectedBgColor != null &&
-                  selectedBgColor != Colors.greenAccent) {
+              if (selectedBgColor != null && selectedBgColor != Colors.greenAccent) {
                 NovelConfigManager().setUserConfigBgColor(Colors.greenAccent);
                 widget._menuItemClickedCallback(
                     MenuOperateEnum.OPERATE_SETTING_BG_COLOR,
@@ -772,8 +770,7 @@ class _SettingMenuPageBgItemState extends State<_SettingMenuPageBgItem> {
                     color: Colors.grey,
                   ),
             onTap: () {
-              if (selectedBgColor != null &&
-                  selectedBgColor != Colors.grey) {
+              if (selectedBgColor != null && selectedBgColor != Colors.grey) {
                 NovelConfigManager().setUserConfigBgColor(Colors.grey);
                 widget._menuItemClickedCallback(
                     MenuOperateEnum.OPERATE_SETTING_BG_COLOR,

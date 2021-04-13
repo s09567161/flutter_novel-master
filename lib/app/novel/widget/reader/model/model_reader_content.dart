@@ -35,7 +35,7 @@ class NovelReaderContentModel {
 
     while (true) {
       /// 如果卡的话，调整这个参数即可，越大越不卡，不过加载速度会下降
-      await Future.delayed(Duration(milliseconds: 50));
+      await Future.delayed(Duration(milliseconds: 100));
 
       isStartLooper = true;
 
@@ -100,7 +100,7 @@ class NovelReaderContentModel {
     if (contentData.content == null ||
         contentData.content.length == 0) {
 
-      contentData.content="加载出";
+      contentData.content="加载出错";
 
     }
 
@@ -330,14 +330,14 @@ assert(paragraphContents!=null&&paragraphContents.length>0);
       String regexString = r'img=(.+?)=img';
       RegExp regExp = new RegExp(regexString);
       List listMatch = [];
-      print('--1------$content------------------------');
+     // print('--1------$content------------------------');
       Iterable<Match> matches = regExp.allMatches(content);
       if (matches.length > 0) {
         print('-----图文解析------------------');
         //处理图片url
         for (Match m in matches) {
           String str = m.group(1);
-          print('--2------$str------------------------');
+        //  print('--2------$str------------------------');
           str = str.replaceAll('img=', '');
           str = str.replaceAll('=img', '');
           listMatch.add(json.decode(str));
@@ -362,18 +362,18 @@ assert(paragraphContents!=null&&paragraphContents.length>0);
             imgH = scale*imgW/2;
             imgW = maxWidth+30;
           }
-          img = ReadImageController().getNetBookContentImageByUrl(url, index,viewModel);
+         // img = ReadImageController().getNetBookContentImageByUrl(url, index,viewModel);
           if (img != null) {
             offset = Offset(configEntity.contentPadding.toDouble(), offset.dy);
             //获取到图片，绘制图片
             pageCanvas.drawImageRect(img,
                 Rect.fromLTWH(0, 0, double.parse(imgWStr),double.parse(imgHStr)),
-                Rect.fromLTWH(offset.dx+dinterval, offset.dy+dinterval,imgW,imgH),viewModel.bgPaint);
+                Rect.fromLTWH(offset.dx, offset.dy,imgW,imgH),viewModel.bgPaint);
             offset = Offset(configEntity.contentPadding.toDouble(), offset.dy + imgH + pageContentConfig.currentContentParagraphSpacing);
           }
         }
       } else {
-        print('-----纯文本------------------');
+        print('-----纯文本-----11111111111111111-------------');
         if(a==0&&index==0){
           ///绘制内标题
           viewModel.textPainter.text = TextSpan(
@@ -401,8 +401,7 @@ assert(paragraphContents!=null&&paragraphContents.length>0);
                       pageContentConfig.currentContentFontSize,
                   fontSize: pageContentConfig.currentContentFontSize.toDouble()));
           viewModel.textPainter.layout(
-              maxWidth:
-              configEntity.pageSize.dx - (2 * configEntity.contentPadding));
+              maxWidth: configEntity.pageSize.dx - (2 * configEntity.contentPadding));
           viewModel.textPainter.paint(pageCanvas, offset);
 
           offset = Offset(

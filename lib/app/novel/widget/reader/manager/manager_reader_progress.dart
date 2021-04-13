@@ -1,3 +1,4 @@
+import 'package:epub/epub.dart';
 import 'package:flutter_novel/app/novel/entity/entity_novel_book_chapter.dart';
 import 'package:flutter_novel/app/novel/widget/reader/content/helper/helper_reader_content.dart';
 import 'package:flutter_novel/app/novel/view_model/view_model_novel_reader.dart';
@@ -116,6 +117,49 @@ class ReaderProgressManager {
     return true;
   }
 
+  Future<bool> goToTargetLocalChapter(int index) async {
+
+    List<EpubChapter> localchapter = readerViewModel.getLocalCatalog();
+
+    ReaderContentDataValue currentDataValue =
+    readerViewModel.getCurrentContentDataValue();
+
+    if (index == currentDataValue.chapterIndex + 1) {
+      goToNextChapter(true);
+    } else if (index == currentDataValue.chapterIndex - 1) {
+      goToPreChapter(true);
+    } else {
+      currentDataValue.clear();
+      currentDataValue.chapterIndex = index;
+
+      ReaderContentDataValue preDataValue =
+      readerViewModel.getPreContentDataValue();
+      preDataValue.clear();
+
+      ReaderContentDataValue nextDataValue =
+      readerViewModel.getNextContentDataValue();
+      nextDataValue.clear();
+
+      preDataValue.chapterIndex = index - 1;
+
+      if (index < localchapter.length - 1) {
+        nextDataValue.chapterIndex = index + 1;
+      } else {
+        nextDataValue.chapterIndex = -1;
+      }
+    }
+
+    readerViewModel.getContentParseQueue().clear();
+    readerViewModel.getMicroContentParseQueue().clear();
+
+    checkLoaclPageCache();
+    checkLocalChapterCache();
+
+    readerViewModel.notifyRefresh();
+
+    return true;
+  }
+
   void goToNextPage() async {
     readerViewModel.getCurrentContentDataValue().currentPageIndex++;
 
@@ -130,7 +174,7 @@ class ReaderProgressManager {
       }
     }
 
-    checkPageCache();
+    checkLoaclPageCache();
   }
 
   Future<bool> goToNextChapter(bool resetIndex) async {
@@ -181,8 +225,10 @@ class ReaderProgressManager {
     readerViewModel.getContentParseQueue().clear();
     readerViewModel.getMicroContentParseQueue().clear();
 
-    checkChapterCache();
-    checkPageCache();
+//    checkChapterCache();
+//    checkPageCache();
+    checkLoaclPageCache();
+    checkLocalChapterCache();
 
     return true;
   }
@@ -201,7 +247,8 @@ class ReaderProgressManager {
       }
     }
 
-    checkPageCache();
+  //  checkPageCache();
+    checkLoaclPageCache();
   }
 
   Future<bool> goToPreChapter(bool resetIndex) async {
@@ -254,9 +301,10 @@ class ReaderProgressManager {
     readerViewModel.getContentParseQueue().clear();
     readerViewModel.getMicroContentParseQueue().clear();
 
-    checkChapterCache();
-    checkPageCache();
-
+//    checkChapterCache();
+//    checkPageCache();
+    checkLoaclPageCache();
+    checkLocalChapterCache();
     return true;
   }
 
@@ -306,6 +354,49 @@ class ReaderProgressManager {
     }
   }
 
+  void checkLocalChapterCache() {
+    ReaderContentDataValue preDataValue =
+    readerViewModel.getPreContentDataValue();
+    ReaderContentDataValue nextDataValue =
+    readerViewModel.getNextContentDataValue();
+
+    List<EpubChapter> catalogData = readerViewModel.getLocalCatalog();
+
+    if (preDataValue != null && preDataValue.chapterIndex != -1) {
+      if (preDataValue.contentState == ContentState.STATE_NORMAL) {
+        if (preDataValue.chapterContentConfigs == null ||
+            preDataValue.chapterContentConfigs.length == 0) {
+          preDataValue.chapterCanvasDataMap.clear();
+
+          readerViewModel.requestNewLoaclContent(
+              catalogData,preDataValue.chapterIndex,preDataValue.novelId);
+        } else {
+          readerViewModel.loadReaderContentDataValue(
+              preDataValue.chapterContentConfigs, preDataValue, false, true);
+        }
+      }
+    } else {
+      preDataValue.chapterContentConfigs.clear();
+      preDataValue.chapterCanvasDataMap.clear();
+    }
+    if (nextDataValue != null && nextDataValue.chapterIndex != -1) {
+      if (nextDataValue.contentState == ContentState.STATE_NORMAL) {
+        if (nextDataValue.chapterContentConfigs == null ||
+            nextDataValue.chapterContentConfigs.length == 0) {
+          nextDataValue.chapterCanvasDataMap.clear();
+
+          readerViewModel.requestNewLoaclContent(catalogData,nextDataValue.chapterIndex,nextDataValue.novelId);
+        } else {
+          readerViewModel.loadReaderContentDataValue(
+              nextDataValue.chapterContentConfigs, nextDataValue, false, true);
+        }
+      }
+    } else {
+      nextDataValue.chapterContentConfigs.clear();
+      nextDataValue.chapterCanvasDataMap.clear();
+    }
+  }
+
   void checkPageCache() {
     ReaderContentDataValue currentDataValue =
         readerViewModel.getCurrentContentDataValue();
@@ -321,6 +412,33 @@ class ReaderProgressManager {
         readerViewModel.requestNewContent(
             catalogData.chapters[currentDataValue.chapterIndex]
               ..novelId = catalogData.book);
+
+      } else if (currentDataValue.chapterCanvasDataMap.length !=
+          currentDataValue.chapterContentConfigs.length) {
+        readerViewModel.loadReaderContentDataValue(
+            currentDataValue.chapterContentConfigs,
+            currentDataValue,
+            true,
+            false);
+      }
+    }
+  }
+
+  void checkLoaclPageCache() {
+    ReaderContentDataValue currentDataValue =
+    readerViewModel.getCurrentContentDataValue();
+
+    List<EpubChapter> catalogData = readerViewModel.getLocalCatalog();
+
+    if (currentDataValue != null && (currentDataValue.chapterIndex != -1)) {
+      if (currentDataValue.chapterContentConfigs == null ||
+          currentDataValue.chapterContentConfigs.length == 0) {
+        currentDataValue.chapterCanvasDataMap.clear();
+
+
+
+        readerViewModel.requestNewLoaclContent(
+            catalogData,currentDataValue.chapterIndex,currentDataValue.novelId);
 
       } else if (currentDataValue.chapterCanvasDataMap.length !=
           currentDataValue.chapterContentConfigs.length) {
@@ -357,7 +475,7 @@ class ReaderProgressManager {
         readerViewModel.getCurrentContentDataValue();
 
     return currentDataValue.chapterIndex + 1 <
-        readerViewModel.getCatalog().chapters.length;
+        readerViewModel.getLocalCatalog().length;
   }
 
   bool isCanGoPre() {

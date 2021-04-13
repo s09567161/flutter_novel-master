@@ -1,5 +1,7 @@
 import 'dart:collection';
 import 'dart:convert';
+import 'dart:typed_data';
+import 'package:epub/epub.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_novel/app/html_parser/parser.dart';
 import 'package:flutter_novel/app/novel/entity/entity_novel_info.dart';
@@ -139,6 +141,40 @@ class NovelReaderViewModel extends BaseViewModel {
     checkChapterCache();
   }
 
+  void setCatalogLocalData(String novelId, int chapterIndex, int pageIndex,
+      List<EpubChapter> catalog) async {
+    _configModel.loaclcatalog = catalog;
+
+    (_contentModel.dataValue ??= ReaderContentDataValue())
+      ..novelId = novelId
+      ..currentPageIndex = pageIndex
+      ..chapterIndex = chapterIndex;
+
+    (_contentModel.preDataValue ??= ReaderContentDataValue())
+      ..novelId = novelId;
+    (_contentModel.nextDataValue ??= ReaderContentDataValue())
+      ..novelId = novelId;
+
+    if (isHasPreChapter()) {
+      _contentModel.preDataValue.chapterIndex =
+          _contentModel.dataValue.chapterIndex - 1;
+    } else {
+      _contentModel.preDataValue..chapterIndex = -1;
+    }
+
+    if (isHasNextChapter()) {
+      _contentModel.nextDataValue.chapterIndex =
+          _contentModel.dataValue.chapterIndex + 1;
+    } else {
+      _contentModel.nextDataValue..chapterIndex = -1;
+    }
+
+    _contentModel?.startParseLooper();
+
+    checkLocalPageCache();
+    checkLocalChapterCache();
+  }
+
   void setFontSize(int size) {
     _configModel.configEntity.fontSize = size;
     reApplyConfig(true,true);
@@ -218,6 +254,9 @@ class NovelReaderViewModel extends BaseViewModel {
   NovelBookChapter getCatalog() {
     return _configModel.catalog;
   }
+  List<EpubChapter> getLocalCatalog() {
+    return _configModel.loaclcatalog;
+  }
 
   /// --------------------------- 网络数据处理 ---------------------------------
 
@@ -225,12 +264,97 @@ class NovelReaderViewModel extends BaseViewModel {
     if (isDisposed) {
       return;
     }
+    print('-----------网络数据-------------------------------');
+//    ByteData response = await rootBundle.load('resource/hebeishidajianjun.epub');
+//      EpubBook readBook = await EpubReader.readBook(response.buffer.asUint8List());
+//        Map images = readBook?.Content?.Images;
+
+    //var chapter = readBook.Chapters[1];
+//    images.forEach((key, value)async{
+//      chapter.HtmlContent = chapter.HtmlContent.replaceAll(key, key+'..' + base64Encode(Uint8List.fromList(value.Content)));
+//    });
+
+//    var title = chapterData.title;
+//    String content = _parseHtmlString(chapterData.HtmlContent);
+//    // print('------本地数据-------------------$content-------------------------------');
+//    parseChapterContent(ReaderParseContentDataValue(content,
+//        chapterData.novelId, title, chapterData.order - 1));
+//      for(int a=0;a<readBook.Chapters.length;a++){
+//
+//      }
 
     String txt = await rootBundle.loadString('resource/Section0002.xhtml');
     String content = _parseHtmlString(txt);
-      print('------本地数据-------------------$content-------------------------------');
+   // print('------本地数据-------------------$content-------------------------------');
     parseChapterContent(ReaderParseContentDataValue(content,
         chapterData.novelId, chapterData.title, chapterData.order - 1));
+
+
+
+    //    String originalContent =
+//        await _cacheModel.getCacheChapterContent(chapterData.link);
+//    if (originalContent == null) {
+//      parseChapterContent(ReaderParseContentDataValue(
+//          null, chapterData.novelId, chapterData.title, chapterData.order - 1)
+//        ..contentState = ContentState.STATE_NOT_FOUND);
+
+
+
+//    String originalContent =
+//        await _cacheModel.getCacheChapterContent(chapterData.link);
+//    if (originalContent == null) {
+//      parseChapterContent(ReaderParseContentDataValue(
+//          null, chapterData.novelId, chapterData.title, chapterData.order - 1)
+//        ..contentState = ContentState.STATE_NOT_FOUND);
+//    } else {
+//      String content = _parseHtmlString(
+//          json.decode(originalContent)["chapter"]["cpContent"]);
+//      parseChapterContent(ReaderParseContentDataValue(content,
+//          chapterData.novelId, chapterData.title, chapterData.order - 1));
+//    }
+  }
+
+  /// --------------------------- 本地数据处理 ---------------------------------
+
+  void requestNewLoaclContent(List<EpubChapter> chapterData, int chapterIndex, String novelId) async {
+    if (isDisposed) {
+      return;
+    }
+
+
+
+
+    var chapter = chapterData[chapterIndex];
+
+
+//    images.forEach((key, value)async{
+//      chapter.HtmlContent = chapter.HtmlContent.replaceAll(key, key+'../' + base64Encode(Uint8List.fromList(value.Content)));
+//    });
+    //  print('-----------${readBook.Chapters[a].Title}-------------------------------');
+    var title = chapterData[chapterIndex].Title;
+    String content = _parseHtmlString(chapterData[chapterIndex].HtmlContent);
+     print('------本地数据-------------------$content-------------------------------');
+    parseChapterContent(ReaderParseContentDataValue(content,
+        novelId, title, chapterIndex));
+//      for(int a=0;a<readBook.Chapters.length;a++){
+//
+//      }
+
+//    String txt = await rootBundle.loadString('resource/Section0002.xhtml');
+//    String content = _parseHtmlString(txt);
+//    print('------本地数据-------------------$content-------------------------------');
+//    parseChapterContent(ReaderParseContentDataValue(content,
+//        chapterData.novelId, chapterData.title, chapterData.order - 1));
+
+
+
+    //    String originalContent =
+//        await _cacheModel.getCacheChapterContent(chapterData.link);
+//    if (originalContent == null) {
+//      parseChapterContent(ReaderParseContentDataValue(
+//          null, chapterData.novelId, chapterData.title, chapterData.order - 1)
+//        ..contentState = ContentState.STATE_NOT_FOUND);
+
 
 
 //    String originalContent =
@@ -253,15 +377,31 @@ class NovelReaderViewModel extends BaseViewModel {
     }
     var sourceInfo = await _netModel.getNovelBookSource(novelId);
     if (sourceInfo?.data != null && sourceInfo.data.length > 0) {
-      var result = await _netModel.getNovelBookCatalog(sourceInfo.data[0].id);
-      if (result.isSuccess && result?.data != null) {
-        setCatalogData(novelId, bookInfo.currentChapterIndex,
-            bookInfo.currentPageIndex, result.data);
+//      var result = await _netModel.getNovelBookCatalog(sourceInfo.data[0].id);
+//      if (result.isSuccess && result?.data != null) {
+//        setCatalogData(novelId, bookInfo.currentChapterIndex,
+//            bookInfo.currentPageIndex, result.data);
+//      }
+
+      ByteData response = await rootBundle.load('resource/hebeishidajianjun.epub');
+      EpubBook readBook = await EpubReader.readBook(response.buffer.asUint8List());
+      Map images = readBook?.Content?.Images;
+      for(int a=0;a<readBook.Chapters.length;a++) {
+        var chapter = readBook.Chapters[a];
+        images.forEach((key, value) async {
+                chapter.HtmlContent = chapter.HtmlContent.replaceAll(key, key+'../' + base64Encode(Uint8List.fromList(value.Content)));
+        });
       }
+      List<EpubChapter> chapters = readBook.Chapters;
+      setCatalogLocalData(novelId,bookInfo.currentChapterIndex,
+          bookInfo.currentPageIndex,chapters);
+    }else{
+
+
     }
   }
 
-  String _parseHtmlString(String htmlString) {
+  String _parseHtmlString(String htmlString){
     if (htmlString == null || htmlString.length == 0) {
       return "加载出错，内容为空";
     }
@@ -270,7 +410,7 @@ class NovelReaderViewModel extends BaseViewModel {
 
     String parsedString = parse(document.body.text).documentElement.text;
 
-    print('-----$parsedString--------------------------');
+   // print('-----$parsedString--------------------------');
 
     return parsedString.replaceAll("\n\n", "\n").trim();
   }
@@ -294,8 +434,15 @@ class NovelReaderViewModel extends BaseViewModel {
     progressManager.checkChapterCache();
   }
 
+  void checkLocalChapterCache() {
+    progressManager.checkLocalChapterCache();
+  }
+
   void checkPageCache() {
     progressManager.checkPageCache();
+  }
+  void checkLocalPageCache() {
+    progressManager.checkLoaclPageCache();
   }
 
   ReaderContentDataValue getCurrentContentDataValue() {
@@ -371,7 +518,7 @@ class NovelReaderViewModel extends BaseViewModel {
     if (contentChangedCallback != null) {
       contentChangedCallback(ReaderOperateEnum.OPERATE_JUMP_CHAPTER);
     }
-    return progressManager.goToTargetChapter(index);
+    return progressManager.goToTargetLocalChapter(index);
   }
 
   Future<bool> goToNextChapter() async {

@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:flutter/painting.dart';
 import 'package:flutter/services.dart';
@@ -7,6 +9,8 @@ import 'package:flutter_novel/app/novel/widget/reader/model/event_bus.dart';
 
 
 class ReadImageController {
+
+
 
   factory ReadImageController() => _getInstance();
   static ReadImageController get instance => _getInstance();
@@ -29,6 +33,17 @@ class ReadImageController {
   ui.Image getNetBookContentImageByUrl(String url, int index, NovelReaderViewModel viewModel) {
 
     ui.Image image;
+    String regxstring=r'http';
+    String locData='';
+    RegExp regExp = new RegExp(regxstring);
+    bool isurl = regExp.hasMatch(url);
+
+    if(!isurl){
+      List<String> spliturl = url.split('..');
+      url=spliturl.first;
+      locData=spliturl.last;
+
+    }
     //查找url是否存在已加载图片,存在则取出图片
     for (var item in _bookContentImageList) {
       if (item.url == url) {
@@ -38,12 +53,13 @@ class ReadImageController {
     }
     //不存在图片则异步加载图片
     if (image == null) {
-        _loadImage(url, true).then((value) {
+        _loadImage(isurl?url:locData,isurl).then((value) {
           //加载成功，将图片与url对应保存
+          print('-111-----------$value-----------------------------------');
           _bookContentImageList.add(BookContentImage(image: value, url: url));
           //通知页面进行渲染
           print('-----------刷新图片-----------------------------------');
-           viewModel.notifyRefresh();
+          // viewModel.notifyRefresh();
 
           EventBus().send(ReadUpdateContentEvent,index);
         });
@@ -54,22 +70,31 @@ class ReadImageController {
 
 
   Future<ui.Image> _loadImage(var path, bool isUrl)  {
-
-    ImageStream stream;
-    if (isUrl) {
-      stream = NetworkImage(path).resolve(ImageConfiguration.empty);
-    } else {
-      stream = AssetImage(path, bundle: rootBundle)
-          .resolve(ImageConfiguration.empty);
-    }
     Completer<ui.Image> completer = Completer<ui.Image>();
-    void listener(ImageInfo frame, bool synchronousCall) {
-      final ui.Image image = frame.image;
-      completer.complete(image);
-      stream.removeListener(ImageStreamListener(listener));
+
+    if (isUrl) {
+      ImageStream stream = NetworkImage(path).resolve(ImageConfiguration.empty);
+      void listener(ImageInfo frame, bool synchronousCall) {
+        final ui.Image image = frame.image;
+        completer.complete(image);
+        stream.removeListener(ImageStreamListener(listener));
+      }
+      stream.addListener(ImageStreamListener(listener));
+    } else {
+      var base64decode = base64Decode(path);
+      ImageStream stream = MemoryImage(File(base64decode.toString()).readAsBytesSync()).resolve(ImageConfiguration.empty);
+      void listener(ImageInfo frame, bool synchronousCall) {
+        final ui.Image image = frame.image;
+        completer.complete(image);
+        stream.removeListener(ImageStreamListener(listener));
+      }
+
+      stream.addListener(ImageStreamListener(listener));
     }
 
-    stream.addListener(ImageStreamListener(listener));
+
+
+
     return completer.future;
   }
   

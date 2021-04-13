@@ -258,6 +258,7 @@ class _NovelReaderPageState
               case MenuOperateEnum.OPERATE_SETTING_BG_COLOR:
                 if (configData.currentCanvasBgColor.value != data.value) {
                   configData..currentCanvasBgColor = data;
+
                   viewModel.setBgColor(data);
                   refreshReader();
                 }
@@ -354,7 +355,7 @@ class _NovelReaderPageState
         return CustomSingleChildLayout(
           delegate: NovelMenuLayoutDelegate(
               _controller.value, MenuDirection.DIRECTION_LEFT),
-          child: NovelCatalogMenu(viewModel.getCatalog(),
+          child: NovelCatalogMenu(viewModel.getLocalCatalog(),
               viewModel.getCurrentContentDataValue().chapterIndex,
               (type, data) {
             switch (type) {
