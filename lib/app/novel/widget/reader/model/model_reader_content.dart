@@ -373,7 +373,7 @@ assert(paragraphContents!=null&&paragraphContents.length>0);
           }
         }
       } else {
-        print('-----纯文本-----11111111111111111-------------');
+        print('-----纯文本---222222222222222222-------------');
         if(a==0&&index==0){
           ///绘制内标题
           viewModel.textPainter.text = TextSpan(
